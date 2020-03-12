@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
   for (long rep = 0; rep < NREPEATS; rep++) {
     u = Gauss_Seidel(N, f, u, maxiter);
     printf("Instance %d/%d done\n", rep, NREPEATS-1);
-  }hey
+  }
   double time = t.toc();
 
   printf("--------------------------\n");
