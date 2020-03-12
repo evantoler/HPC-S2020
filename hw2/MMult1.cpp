@@ -1,11 +1,12 @@
-// g++ -fopenmp -O3 -march=native MMult1.cpp && ./a.out
-
+// g++ -std=c++11 -O3 -fopenmp -march=native MMult1.cpp -o MMult1 && ./MMult1
+// g++ -std=c++11 -O3 -march=native MMult1.cpp -o MMult1 && ./MMult1
 #include <stdio.h>
 #include <math.h>
 #include <omp.h>
 #include "utils.h"
 
-#define BLOCK_SIZE 16
+// A block size of 120 is optimal.
+#define BLOCK_SIZE 120
 
 // Note: matrices are stored in column major order; i.e. the array elements in
 // the (m x n) matrix C are stored in the sequence: {C_00, C_10, ..., C_m0,
@@ -25,13 +26,103 @@ void MMult0(long m, long n, long k, double *a, double *b, double *c) {
 }
 
 void MMult1(long m, long n, long k, double *a, double *b, double *c) {
-  // TODO: See instructions below
+
+  // optimal loop ordering for column-major matrices
+  #pragma omp parallel for schedule(static)
+  for (long j = 0; j < n; j++) {
+    for (long p = 0; p < k; p++) {
+      double B_pj = b[p+j*k];
+      for (long i = 0; i < m; i++) {
+        double A_ip = a[i+p*m];
+        double C_ij = c[i+j*m];
+        C_ij = C_ij + A_ip * B_pj;
+        c[i+j*m] = C_ij;
+      }
+    }
+  }
+
+  // // Strictly minimizing memory accesses
+  // for (long j = 0; j < n; j++) {
+  //   for (long i = 0; i < m; i++) {
+  //     double C_ij = c[i+j*m];
+  //     for (long p = 0; p < k; p++) {
+  //       double A_ip = a[i+p*m];
+  //       double B_pj = b[p+j*k];
+  //       C_ij = C_ij + A_ip * B_pj;
+  //     }
+  //     c[i+j*m] = C_ij;
+  //   }
+  // }
+}
+
+void MMult1block(long m, long n, long k, double *a, double *b, double *c) {
+
+  // Use blocking BLOCK_SIZE to speed up matrix multiplication.
+  // We assume the following are integers
+  long Bm = m / BLOCK_SIZE;
+  long Bn = n / BLOCK_SIZE;
+  long Bk = k / BLOCK_SIZE;
+
+  // Load blocks *one at a time* and send to MMult1 for each blocks.
+  // Blocks are stored on the stack.
+  double A_ip[BLOCK_SIZE * BLOCK_SIZE]; // one block of A
+  double B_pj[BLOCK_SIZE * BLOCK_SIZE]; // one block of B
+  double C_ij[BLOCK_SIZE * BLOCK_SIZE]; // one block of C
+
+  // variables "local" to each block
+  int row, col;
+
+  // minimizing memory accesses
+  for (long jblock = 0; jblock < Bn; jblock++) {
+    for (long iblock = 0; iblock < Bm; iblock++) {
+
+      // build a block of C
+      for (col = 0; col < BLOCK_SIZE; col++) {
+        for (row = 0; row < BLOCK_SIZE; row++) {
+          C_ij[row + col*BLOCK_SIZE] = c[(row + iblock*BLOCK_SIZE) + (col + jblock*BLOCK_SIZE)*m];
+        }
+      }
+
+      for (long pblock = 0; pblock < Bk; pblock++) {
+
+        // build a block of A
+        for (col = 0; col < BLOCK_SIZE; col++) {
+          for (row = 0; row < BLOCK_SIZE; row++) {
+            A_ip[row + col*BLOCK_SIZE] = a[(row + iblock*BLOCK_SIZE) + (col + pblock*BLOCK_SIZE)*m];
+          }
+        }
+
+        // build a block of B
+        for (col = 0; col < BLOCK_SIZE; col++) {
+          for (row = 0; row < BLOCK_SIZE; row++) {
+            B_pj[row + col*BLOCK_SIZE] = b[(row + pblock*BLOCK_SIZE) + (col + jblock*BLOCK_SIZE)*k];
+          }
+        }
+
+        // multiply the blocks
+        MMult1(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE, (double*) &A_ip, (double*) &B_pj, (double*) &C_ij);
+      }
+
+      // put the result in the original pointer c
+      for (col = 0; col < BLOCK_SIZE; col++) {
+        for (row = 0; row < BLOCK_SIZE; row++) {
+          c[(row + iblock*BLOCK_SIZE) + (col + jblock*BLOCK_SIZE)*m] = C_ij[row + col*BLOCK_SIZE];
+        }
+      }
+
+    }
+  }
+
 }
 
 int main(int argc, char** argv) {
   const long PFIRST = BLOCK_SIZE;
   const long PLAST = 2000;
   const long PINC = std::max(50/BLOCK_SIZE,1) * BLOCK_SIZE; // multiple of BLOCK_SIZE
+
+  #ifdef _OPENMP
+    omp_set_num_threads(6);
+  #endif
 
   printf(" Dimension       Time    Gflop/s       GB/s        Error\n");
   for (long p = PFIRST; p < PLAST; p += PINC) {
@@ -55,12 +146,15 @@ int main(int argc, char** argv) {
     Timer t;
     t.tic();
     for (long rep = 0; rep < NREPEATS; rep++) {
-      MMult1(m, n, k, a, b, c);
+      // MMult1(m, n, k, a, b, c);
+      MMult1block(m, n, k, a, b, c);
     }
     double time = t.toc();
-    double flops = 0; // TODO: calculate from m, n, k, NREPEATS, time
-    double bandwidth = 0; // TODO: calculate from m, n, k, NREPEATS, time
-    printf("%10d %10f %10f %10f", p, time, flops, bandwidth);
+    double flops = NREPEATS * (2*m*n*k) / 1e9 / time;
+    // double bandwidth = NREPEATS * (2*m*n + 2*m*n*k) * sizeof(double) / 1e9 / time; // suboptimal--"bad" MMult1
+    // double bandwidth = NREPEATS * (n*k + 3*m*n*k) * sizeof(double) / 1e9 / time; // "good" MMult1
+    double bandwidth = NREPEATS * (4*m*n + 5*m*n*k/BLOCK_SIZE + 3*m*n*k) * sizeof(double) / 1e9 / time; // MMult1block
+    printf("%10d %10f %10f %10f", p, time/NREPEATS, flops, bandwidth);
 
     double max_err = 0;
     for (long i = 0; i < m*n; i++) max_err = std::max(max_err, fabs(c[i] - c_ref[i]));
@@ -69,6 +163,7 @@ int main(int argc, char** argv) {
     aligned_free(a);
     aligned_free(b);
     aligned_free(c);
+    aligned_free(c_ref);
   }
 
   return 0;
