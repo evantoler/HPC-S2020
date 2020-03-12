@@ -195,15 +195,15 @@ double* Gauss_Seidel(long N, double* f, double* u, long maxiter) {
 
 
 int main(int argc, char** argv) {
-  const long N = 1001;
+  const long N = 101;
   const long maxiter = 10000;
   const long NREPEATS = 100;
   #ifdef _OPENMP
     omp_set_num_threads(6); // option: vary the number of threads
   #endif
 
-  double* u = (double*) malloc(N*N*sizeof(double));
-  double* f = (double*) malloc(N*N*sizeof(double));
+  double* u = (double*) aligned_malloc(N*N*sizeof(double));
+  double* f = (double*) aligned_malloc(N*N*sizeof(double));
 
   // forcing is f=1
   for (int i=0; i<N*N; i++)
@@ -232,8 +232,8 @@ int main(int argc, char** argv) {
   // for (int i=0; i<N*N; i++)
   //   printf("u[%d] = %10f\n", i, u[i]);
 
-  free(u);
-  free(f);
+  aligned_free(u);
+  aligned_free(f);
 
   return 0;
 }

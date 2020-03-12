@@ -18,7 +18,7 @@ double* Jacobi(long N, double* f, double* u, long maxiter) {
   double hsq = h*h;
 
   int i,j; // loop variables
-  double* u_old;
+  double* u_old = (double*) aligned_malloc(N*N*sizeof(double));
 
   // initial guess u0 = 0
   #pragma omp parallel for schedule(static)
@@ -50,7 +50,10 @@ double* Jacobi(long N, double* f, double* u, long maxiter) {
     begin update
     */
 
-    u_old = u;
+    // make a copy of the previous iterate
+    #pragma omp parallel for schedule(static)
+    for (j=0; j<N*N; j++)
+      u_old[j] = u[j];
 
     // the corner points
     u[0]      = (hsq * f[0]     + u_old[1]       + u_old[N]) / 4.0;
@@ -109,21 +112,21 @@ double* Jacobi(long N, double* f, double* u, long maxiter) {
       // Parallel loops should keep the implicit barrier at the end
 
       // edge points
-      #pragma omp parallel for reduction(+ : res)
+      #pragma omp for schedule(static) reduction(+ : res)
       for (j=1; j<N-1; j++)          // left edge
         res = res + pow( (4*u[j] - u[j-1] - u[j+1] - u[j+N])/hsq - f[j], 2.0);
-      #pragma omp parallel for reduction(+ : res)
+      #pragma omp for schedule(static) reduction(+ : res)
       for (j=N*N-N+1; j<N*N-1; j++)  // right edge
         res = res + pow( (4*u[j] - u[j-1] - u[j+1] - u[j-N])/hsq - f[j], 2.0);
-      #pragma omp parallel for reduction(+ : res)
+      #pragma omp for schedule(static) reduction(+ : res)
       for (j=N; j<N*N-N; j+=N)       // bottom edge
         res = res + pow( (4*u[j] - u[j+1] - u[j-N] - u[j+N])/hsq - f[j], 2.0);
-      #pragma omp parallel for reduction(+ : res)
+      #pragma omp for schedule(static) reduction(+ : res)
       for (j=2*N-1; j<N*N-1; j+=N)   // top edge
         res = res + pow( (4*u[j] - u[j-1] - u[j-N] - u[j+N])/hsq - f[j], 2.0);
 
       // interior points
-      #pragma omp parallel for reduction(+ : res)
+      #pragma omp parallel for schedule(static) reduction(+ : res)
       for(i = 1; i<N-1; i++) {
 
         for (j = 1; j<N-1; j++)
@@ -141,19 +144,21 @@ double* Jacobi(long N, double* f, double* u, long maxiter) {
 
   }
 
+  aligned_free(u_old);
+
   return u;
 }
 
 int main(int argc, char** argv) {
-  const long N = 1001;
+  const long N = 101;
   const long maxiter = 10000;
   const long NREPEATS = 100;
   #ifdef _OPENMP
     omp_set_num_threads(6); // option: vary the number of threads
   #endif
 
-  double* u = (double*) malloc(N*N*sizeof(double));
-  double* f = (double*) malloc(N*N*sizeof(double));
+  double* u = (double*) aligned_malloc(N*N*sizeof(double));
+  double* f = (double*) aligned_malloc(N*N*sizeof(double));
 
   // forcing is f=1
   for (int i=0; i<N*N; i++)
@@ -182,8 +187,8 @@ int main(int argc, char** argv) {
   // for (int i=0; i<N*N; i++)
   //   printf("u[%d] = %10f\n", i, u[i]);
 
-  free(u);
-  free(f);
+  aligned_free(u);
+  aligned_free(f);
 
   return 0;
 }
