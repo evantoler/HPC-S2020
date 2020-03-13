@@ -1,5 +1,5 @@
-// g++ -std=c++11 -O3 -fopenmp jacobi2d-omp.cpp -o jacobi2d-omp && ./jacobi2d-omp
-// g++ -std=c++11 -O3 jacobi2d-omp.cpp -o jacobi2d-omp && ./jacobi2d-omp
+// g++ -std=c++11 -O3 -fopenmp jacobi2D-omp.cpp -o jacobi2D-omp && ./jacobi2D-omp
+// g++ -std=c++11 -O3 jacobi2D-omp.cpp -o jacobi2D-omp && ./jacobi2D-omp
 
 #include <stdio.h>
 #include <math.h>
