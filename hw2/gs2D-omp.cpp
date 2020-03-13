@@ -1,5 +1,5 @@
-// g++ -std=c++11 -O3 -fopenmp gs2d-omp.cpp -o gs2d-omp && ./gs2d-omp
-// g++ -std=c++11 -O3 gs2d-omp.cpp -o gs2d-omp && ./gs2d-omp
+// g++ -std=c++11 -O3 -fopenmp gs2D-omp.cpp -o gs2D-omp && ./gs2D-omp
+// g++ -std=c++11 -O3 gs2D-omp.cpp -o gs2D-omp && ./gs2D-omp
 
 #include <stdio.h>
 #include <math.h>
