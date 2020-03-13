@@ -42,6 +42,10 @@ int nthreads, tid, i, j;
   /* For confirmation */
   printf("Thread %d done. Last element= %f\n",tid,a[N-1][N-1]);
 
+  // Evan: need to free the memory now
+  for (i = 0; i<N; i++)
+    free(a[i]);
+  free(a);
   }  /* All threads join master thread and disband */
 
 }
