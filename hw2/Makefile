@@ -7,10 +7,10 @@ build:
 	@g++ -std=c++11 -O3 -fopenmp omp_solved4.c -o omp_solved4
 	@g++ -std=c++11 -O3 -fopenmp omp_solved5.c -o omp_solved5
 	@g++ -std=c++11 -O3 -fopenmp omp_solved6.c -o omp_solved6
-	@g++ -std=c++11 -O3 -fopenmp jacobi2d-omp.cpp -o jacobi2d-omp
-	@g++ -std=c++11 -O3 -fopenmp gs2d-omp.cpp -o gs2d-omp
+	@g++ -std=c++11 -O3 -fopenmp jacobi2D-omp.cpp -o jacobi2D-omp
+	@g++ -std=c++11 -O3 -fopenmp gs2D-omp.cpp -o gs2D-omp
 	@echo "Compiled Successfully!"
 
 clean:
-	@rm -rf val_test01_solved val_test02_solved MMult1 omp_solved2 omp_solved3 omp_solved4 omp_solved5 omp_solved6 jacobi2d-omp gs2d-omp
+	@rm -rf val_test01_solved val_test02_solved MMult1 omp_solved2 omp_solved3 omp_solved4 omp_solved5 omp_solved6 jacobi2D-omp gs2D-omp
 	@echo "Cleaned Successfully!"
