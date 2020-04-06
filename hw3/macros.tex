@@ -1,0 +1,51 @@
+%% \union - Example: \union{j \in J}{A_j}
+\newcommand{\union}[2]{\underset{#1}\bigcup #2}
+
+%% \inter - like \union, but with \bigcap
+\newcommand{\inter}[2]{\underset{#1}\bigcap #2}
+
+%% shorthand for math sets
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\F}{\mathcal{F}}
+\renewcommand{\L}{\mathscr{L}}
+
+%% Distributions
+\newcommand{\Unif}{\text{Unif}}
+\newcommand{\Binom}{\text{Binom}}
+\newcommand{\ow}{\text{otherwise}}
+\newcommand{\Var}{\text{Var}}
+\newcommand{\Cov}{\text{Cov}}
+\newcommand{\Corr}{\text{Corr}}
+\renewcommand{\Re}{\text{Re}}
+
+%% Operations, Norms, etc.
+\newcommand{\grad}{\nabla}
+\renewcommand{\div}{\nabla \cdot}
+\newcommand{\cross}{\times}
+\newcommand{\curl}{\nabla \times}
+\newcommand{\Lap}{\nabla^2}
+\newcommand{\norm}[1]{\left \| #1 \right \|}
+\newcommand{\ip}[1]{\left \langle #1 \right \rangle}
+\renewcommand{\bar}[1]{\overline{#1}}
+\renewcommand{\hat}[1]{\widehat{#1}}
+\renewcommand{\vec}[1]{\bm{#1}}
+\newcommand{\floor}[1]{\left \lfloor #1 \right \rfloor}
+\newcommand{\ceil}[1]{\left \lceil #1 \right \rceil}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\eval}{\bigg\rvert}
+\newcommand{\der}[2]{\frac{d #1}{d #2}}
+\newcommand{\Der}[2]{\frac{D #1}{D #2}}
+\newcommand{\pder}[2]{\frac{\partial #1}{\partial #2}}
+
+
+% Proofs
+\newcommand{\forward}{$(\implies): \quad$}
+\newcommand{\backward}{$(\impliedby): \quad$}
+
+% Colors
+\newcommand{\todo}[1]{\textcolor{red}{#1}}
