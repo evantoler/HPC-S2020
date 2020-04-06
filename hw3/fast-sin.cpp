@@ -27,9 +27,35 @@ void sin4_reference(double* sinx, const double* x) {
   for (long i = 0; i < 4; i++) sinx[i] = sin(x[i]);
 }
 
+// assuming x[i] in (-2*pi, 2*pi)
 void sin4_taylor(double* sinx, const double* x) {
   for (int i = 0; i < 4; i++) {
-    double x1  = x[i];
+    double y  = x[i]; // eventually the argument of sin, modified to Taylor range
+    double extend = 0.0;
+    double sgn = 1.0;
+    if(y<0){ // use trig identity
+      sgn = -1.0 * sgn;
+      y = -y;
+    }
+    while(y > 2.0*M_PI){
+      y = y - 2.0*M_PI;
+    }
+    if(M_PI <= y && y<2*M_PI){ // use trig identity
+      sgn = -1.0 * sgn;
+      y = y - M_PI;
+    }
+    if(M_PI/2.0 < y && y <= 3.0*M_PI/4.0){
+      y = M_PI - y;
+      extend = 1.0; // indicate to use extended range formula
+    }
+    if(M_PI/4.0 < y && y <= M_PI/2.0){
+      y = y - M_PI/2.0; // put y in Taylor range
+      extend = 1.0; // indicate to use extended range formula
+    }
+    if(3.0*M_PI/4.0 < y){
+      y = M_PI - y;
+    }
+    double x1 = y;
     double x2  = x1 * x1;
     double x3  = x1 * x2;
     double x5  = x3 * x2;
@@ -43,7 +69,12 @@ void sin4_taylor(double* sinx, const double* x) {
     s += x7  * c7;
     s += x9  * c9;
     s += x11 * c11;
-    sinx[i] = s;
+    if(extend == 1.0){
+      sinx[i] = sgn * sqrt(1 - s*s);
+    }else{
+      sinx[i] = sgn * s;
+    }
+
   }
 }
 
@@ -128,7 +159,7 @@ int main() {
   double* sinx_intrin = (double*) aligned_malloc(N*sizeof(double));
   double* sinx_vector = (double*) aligned_malloc(N*sizeof(double));
   for (long i = 0; i < N; i++) {
-    x[i] = (drand48()-0.5) * M_PI/2; // [-pi/4,pi/4]
+    x[i] = (drand48()-0.5) * M_PI/2.0; // [-pi/4,pi/4]
     sinx_ref[i] = 0;
     sinx_taylor[i] = 0;
     sinx_intrin[i] = 0;
